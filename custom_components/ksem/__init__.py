@@ -32,9 +32,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     slave = int(options[CONF_SLAVE])
     scan_interval = int(options[CONF_SCAN_INTERVAL])
 
-    from pymodbus.client import AsyncModbusTcpClient
+    from .coordinator import create_tcp_client
 
-    client = AsyncModbusTcpClient(host=host, port=port, timeout=10)
+    client = create_tcp_client(host, port, 10)
     coordinator = KSEMCoordinator(
         hass,
         client,

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
 from typing import Any
 
 import voluptuous as vol
-
-_LOGGER = logging.getLogger(__name__)
 
 from homeassistant.config_entries import ConfigFlow, ConfigEntry, OptionsFlow
 from homeassistant.data_entry_flow import FlowResult
@@ -20,6 +20,9 @@ from .const import (
     DEFAULT_SLAVE,
     DOMAIN,
 )
+from .coordinator import create_tcp_client, read_registers
+
+_LOGGER = logging.getLogger(__name__)
 
 _SCHEMA = vol.Schema(
     {
@@ -47,27 +50,45 @@ class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
             step_id="user", data_schema=_SCHEMA, errors=errors
         )
 
-    async def _test_connection(self, user_input: dict[str, Any]) -> bool:
-        from pymodbus.client import AsyncModbusTcpClient
+    async def _tcp_reachable(self, host: str, port: int) -> bool:
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port), timeout=5
+            )
+            writer.close()
+            with contextlib.suppress(Exception):
+                await writer.wait_closed()
+            return True
+        except Exception as err:  # noqa: BLE001 - network probe
+            _LOGGER.warning(
+                "KSEM: no se alcanza %s:%s por TCP (¿IP correcta / misma red?): %s",
+                host,
+                port,
+                err,
+            )
+            return False
 
-        from .coordinator import read_registers
+    async def _test_connection(self, user_input: dict[str, Any]) -> bool:
+        host = str(user_input[CONF_HOST])
+        port = int(user_input[CONF_PORT])
+        slave = int(user_input[CONF_SLAVE])
+
+        if not await self._tcp_reachable(host, port):
+            return False
 
         try:
-            client = AsyncModbusTcpClient(
-                host=user_input[CONF_HOST],
-                port=int(user_input[CONF_PORT]),
-                timeout=5,
-            )
+            client = create_tcp_client(host, port, 5)
             if not await client.connect():
-                _LOGGER.debug("KSEM: no se pudo abrir la conexion TCP con %s", user_input[CONF_HOST])
+                _LOGGER.warning("KSEM: TCP conectado pero Modbus no abre con %s", host)
                 return False
-            response = await read_registers(
-                client, 0, 2, int(user_input[CONF_SLAVE])
-            )
+            response = await read_registers(client, 0, 2, slave)
             client.close()
-            return response is not None and not response.isError()
+            if response is None or response.isError():
+                _LOGGER.warning("KSEM: respuesta Modbus invalida (slave %s)", slave)
+                return False
+            return True
         except Exception as err:  # noqa: BLE001 - connection probe
-            _LOGGER.debug("KSEM: fallo de conexion: %s", err)
+            _LOGGER.warning("KSEM: fallo de conexion Modbus: %s", err)
             return False
 
     @staticmethod

@@ -29,6 +29,15 @@ async def read_registers(client: Any, address: int, count: int, slave: int) -> A
         return await client.read_holding_registers(address, count, unit=slave)
 
 
+def create_tcp_client(host: str, port: int, timeout: int) -> Any:
+    """Build an async Modbus TCP client, tolerant to pymodbus import paths."""
+    try:
+        from pymodbus.client import AsyncModbusTcpClient
+    except ImportError:
+        from pymodbus.client.async_client import AsyncModbusTcpClient
+    return AsyncModbusTcpClient(host=host, port=port, timeout=timeout)
+
+
 class KSEMReading:
     """Instantaneous and cumulative (direct) values read from the KSEM."""
 
