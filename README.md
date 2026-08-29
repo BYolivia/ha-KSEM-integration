@@ -7,8 +7,6 @@ Integración para Home Assistant que lee el **Kostal Smart Energy Meter (KSEM)**
 **Modbus TCP** y expone los datos de electricidad necesarios para el panel de **Energía**
 de HA: red, placas solares, consumo de la casa y batería.
 
-![Logo](logo.svg)
-
 ## Características
 
 - Instalable directamente desde **HACS** (repositorio personalizado).
