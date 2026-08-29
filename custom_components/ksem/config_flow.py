@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
+
+_LOGGER = logging.getLogger(__name__)
 
 from homeassistant.config_entries import ConfigFlow, ConfigEntry, OptionsFlow
 from homeassistant.data_entry_flow import FlowResult
@@ -47,19 +50,24 @@ class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     async def _test_connection(self, user_input: dict[str, Any]) -> bool:
         from pymodbus.client import AsyncModbusTcpClient
 
+        from .coordinator import read_registers
+
         try:
             client = AsyncModbusTcpClient(
                 host=user_input[CONF_HOST],
                 port=int(user_input[CONF_PORT]),
                 timeout=5,
             )
-            await client.connect()
-            response = await client.read_holding_registers(
-                40972, 2, slave=int(user_input[CONF_SLAVE])
+            if not await client.connect():
+                _LOGGER.debug("KSEM: no se pudo abrir la conexion TCP con %s", user_input[CONF_HOST])
+                return False
+            response = await read_registers(
+                client, 0, 2, int(user_input[CONF_SLAVE])
             )
             client.close()
             return response is not None and not response.isError()
-        except Exception:  # noqa: BLE001 - connection probe
+        except Exception as err:  # noqa: BLE001 - connection probe
+            _LOGGER.debug("KSEM: fallo de conexion: %s", err)
             return False
 
     @staticmethod

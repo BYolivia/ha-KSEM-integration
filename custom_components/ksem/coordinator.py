@@ -21,6 +21,14 @@ _LOGGER = logging.getLogger(__name__)
 _ACC_KEYS: tuple[str, ...] = ("pv", "home", "bat_in", "bat_out")
 
 
+async def read_registers(client: Any, address: int, count: int, slave: int) -> Any:
+    """Read holding registers, compatible with both pymodbus kwarg names."""
+    try:
+        return await client.read_holding_registers(address, count, slave=slave)
+    except TypeError:
+        return await client.read_holding_registers(address, count, unit=slave)
+
+
 class KSEMReading:
     """Instantaneous and cumulative (direct) values read from the KSEM."""
 
@@ -74,9 +82,7 @@ class KSEMCoordinator(DataUpdateCoordinator[KSEMReading]):
     async def _read(self, address: int, count: int) -> list[int]:
         if not self._client.connected:
             await self._client.connect()
-        response = await self._client.read_holding_registers(
-            address, count, slave=self._slave
-        )
+        response = await read_registers(self._client, address, count, self._slave)
         if response is None or response.isError() or not hasattr(response, "registers"):
             raise UpdateFailed(f"Error Modbus al leer el registro {address}")
         return [int(r) for r in response.registers]
