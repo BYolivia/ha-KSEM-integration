@@ -8,7 +8,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from pymodbus.exceptions import ModbusException
 
 from .const import (
-    CONF_POWER_SCALE,
     REG_BATTERY_POWER,
     REG_GRID_EXPORT_ENERGY,
     REG_GRID_IMPORT_ENERGY,
@@ -50,13 +49,11 @@ class KSEMCoordinator(DataUpdateCoordinator[KSEMReading]):
         hass: Any,
         client: Any,
         slave: int,
-        power_scale: float,
         update_interval: timedelta,
     ) -> None:
         super().__init__(hass, _LOGGER, name="Kostal KSEM", update_interval=update_interval)
         self._client: Any = client
         self._slave: int = slave
-        self._power_scale: float = power_scale
         self._base: dict[str, float] = {key: 0.0 for key in _ACC_KEYS}
         self._session: dict[str, float] = {key: 0.0 for key in _ACC_KEYS}
         self._last: datetime | None = None
@@ -113,10 +110,10 @@ class KSEMCoordinator(DataUpdateCoordinator[KSEMReading]):
         except Exception as err:  # noqa: BLE001 - surface any failure as UpdateFailed
             raise UpdateFailed(f"Lectura KSEM: {err}") from err
 
-        grid_power = self._decode_int32(grid_regs) * self._power_scale
-        pv_power = self._decode_int32(pv_regs) * self._power_scale
-        home_power = self._decode_int32(home_regs) * self._power_scale
-        battery_power = self._decode_int32(battery_regs) * self._power_scale
+        grid_power = float(self._decode_int32(grid_regs))
+        pv_power = float(self._decode_int32(pv_regs))
+        home_power = float(self._decode_int32(home_regs))
+        battery_power = float(self._decode_int32(battery_regs))
         grid_import = self._decode_uint64(import_regs) * 0.1 / 1000.0
         grid_export = self._decode_uint64(export_regs) * 0.1 / 1000.0
 

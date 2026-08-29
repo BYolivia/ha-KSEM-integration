@@ -10,11 +10,9 @@ from homeassistant.data_entry_flow import FlowResult
 from .const import (
     CONF_HOST,
     CONF_PORT,
-    CONF_POWER_SCALE,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE,
     DEFAULT_PORT,
-    DEFAULT_POWER_SCALE,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE,
     DOMAIN,
@@ -26,7 +24,6 @@ _SCHEMA = vol.Schema(
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
         vol.Optional(CONF_SLAVE, default=DEFAULT_SLAVE): int,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
-        vol.Optional(CONF_POWER_SCALE, default=DEFAULT_POWER_SCALE): float,
     }
 )
 

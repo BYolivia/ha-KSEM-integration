@@ -8,8 +8,7 @@
           "host": "IP del KSEM",
           "port": "Puerto Modbus (def. 502)",
           "slave": "Slave ID (def. 1)",
-          "scan_interval": "Intervalo de consulta (s)",
-          "power_scale": "Factor de escala de potencia"
+          "scan_interval": "Intervalo de consulta (s)"
         }
       },
       "init": {
@@ -18,8 +17,7 @@
           "host": "IP del KSEM",
           "port": "Puerto Modbus (def. 502)",
           "slave": "Slave ID (def. 1)",
-          "scan_interval": "Intervalo de consulta (s)",
-          "power_scale": "Factor de escala de potencia"
+          "scan_interval": "Intervalo de consulta (s)"
         }
       }
     },

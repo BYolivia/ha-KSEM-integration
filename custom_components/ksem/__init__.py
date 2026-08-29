@@ -9,11 +9,9 @@ from homeassistant.core import HomeAssistant
 from .const import (
     CONF_HOST,
     CONF_PORT,
-    CONF_POWER_SCALE,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE,
     DEFAULT_PORT,
-    DEFAULT_POWER_SCALE,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE,
     DOMAIN,
@@ -33,7 +31,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     port = int(options[CONF_PORT])
     slave = int(options[CONF_SLAVE])
     scan_interval = int(options[CONF_SCAN_INTERVAL])
-    power_scale = float(options.get(CONF_POWER_SCALE, DEFAULT_POWER_SCALE))
 
     from pymodbus.client import AsyncModbusTcpClient
 
@@ -42,7 +39,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         client,
         slave,
-        power_scale,
         timedelta(seconds=scan_interval),
     )
 

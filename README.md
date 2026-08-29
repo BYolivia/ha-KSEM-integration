@@ -67,13 +67,6 @@ En **Ajustes → Energía**:
 | `port` | `502` | Puerto Modbus TCP |
 | `slave` | `1` | Slave ID |
 | `scan_interval` | `5` | Segundos entre consultas |
-| `power_scale` | `1.0` | Factor de escala de los registros de potencia |
-
-### `power_scale`
-
-Según el manual oficial del KSEM, los registros del bloque *Energiefluss/Dashboard*
-son `int32` en **W**. Si observas valores ~1000× demasiado grandes o pequeños,
-cambia `power_scale` a `0.001` (algunas fuentes los reportan en kW).
 
 ## Desarrollo
 
