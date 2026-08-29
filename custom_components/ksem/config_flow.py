@@ -37,11 +37,14 @@ _SCHEMA = vol.Schema(
 class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     VERSION = 1
 
+    _connection_error: str = ""
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
+            self._connection_error = ""
             if not await self._test_connection(user_input):
-                errors["base"] = "cannot_connect"
+                errors["base"] = self._connection_error or "cannot_connect"
             else:
                 return self.async_create_entry(
                     title=user_input[CONF_HOST], data=user_input
@@ -60,12 +63,11 @@ class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                 await writer.wait_closed()
             return True
         except Exception as err:  # noqa: BLE001 - network probe
-            _LOGGER.warning(
-                "KSEM: no se alcanza %s:%s por TCP (¿IP correcta / misma red?): %s",
-                host,
-                port,
-                err,
+            self._connection_error = (
+                f"No se alcanza {host}:{port} por TCP. "
+                f"Comprueba la IP y que HA tenga acceso de red al KSEM: {err}"
             )
+            _LOGGER.warning("KSEM: %s", self._connection_error)
             return False
 
     async def _test_connection(self, user_input: dict[str, Any]) -> bool:
@@ -79,16 +81,26 @@ class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
         try:
             client = create_tcp_client(host, port, 5)
             if not await client.connect():
-                _LOGGER.warning("KSEM: TCP conectado pero Modbus no abre con %s", host)
+                self._connection_error = (
+                    f"Conectado a {host}:{port} pero Modbus no abre la conexion. "
+                    f"Verifica que el esclavo TCP este activado en el KSEM "
+                    f"(sin cifrado TLS, puerto 502)."
+                )
+                _LOGGER.warning("KSEM: %s", self._connection_error)
                 return False
             response = await read_registers(client, 0, 2, slave)
             client.close()
             if response is None or response.isError():
-                _LOGGER.warning("KSEM: respuesta Modbus invalida (slave %s)", slave)
+                self._connection_error = (
+                    f"El KSEM respondio con error de Modbus (slave {slave}). "
+                    f"Prueba otro Slave ID en la integracion."
+                )
+                _LOGGER.warning("KSEM: %s", self._connection_error)
                 return False
             return True
         except Exception as err:  # noqa: BLE001 - connection probe
-            _LOGGER.warning("KSEM: fallo de conexion Modbus: %s", err)
+            self._connection_error = f"Error de Modbus: {err}"
+            _LOGGER.warning("KSEM: %s", self._connection_error)
             return False
 
     @staticmethod
