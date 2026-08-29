@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kostal KSEM",
+        "description": "Configura la conexión Modbus TCP al KSEM.",
+        "data": {
+          "host": "IP del KSEM",
+          "port": "Puerto Modbus (def. 502)",
+          "slave": "Slave ID (def. 1)",
+          "scan_interval": "Intervalo de consulta (s)",
+          "power_scale": "Factor de escala de potencia"
+        }
+      },
+      "init": {
+        "title": "Ajustes Kostal KSEM",
+        "data": {
+          "host": "IP del KSEM",
+          "port": "Puerto Modbus (def. 502)",
+          "slave": "Slave ID (def. 1)",
+          "scan_interval": "Intervalo de consulta (s)",
+          "power_scale": "Factor de escala de potencia"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se pudo conectar al KSEM."
+    },
+    "abort": {
+      "already_configured": "El KSEM ya está configurado."
+    }
+  }
+}
