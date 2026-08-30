@@ -39,30 +39,49 @@ def _read_call_info(client: Any) -> tuple[str | None, str | None]:
     return count_name, unit_name
 
 
+def _unit_options(client: Any, unit_name: str | None, slave: int) -> list[dict[str, int]]:
+    """Build call kwargs to pass the unit/slave id for the installed pymodbus."""
+    if unit_name == "slave":
+        return [{"slave": slave}]
+    if unit_name == "unit":
+        return [{"unit": slave}]
+    opts: list[dict[str, int]] = [{"slave": slave}, {"unit": slave}]
+    for attr in ("unit_id", "slave_id"):
+        if hasattr(client, attr):
+            try:
+                setattr(client, attr, slave)
+            except Exception:  # noqa: BLE001 - not all clients allow it
+                pass
+            break
+    opts.append({})
+    return opts
+
+
 async def read_registers(client: Any, address: int, count: int, slave: int) -> Any:
     """Read holding registers, tolerant to pymodbus kwarg/version differences."""
     count_name, unit_name = _read_call_info(client)
-
-    if unit_name is not None:
-        base_kwargs: dict[str, int] = {unit_name: slave}
-    else:
-        for attr in ("unit_id", "slave_id"):
-            if hasattr(client, attr):
-                try:
-                    setattr(client, attr, slave)
-                except Exception:  # noqa: BLE001 - not all clients allow it
-                    pass
-                break
-        base_kwargs = {}
+    unit_options = _unit_options(client, unit_name, slave)
 
     if count_name is not None:
-        return await client.read_holding_registers(
-            address, **{count_name: count}, **base_kwargs
-        )
+        last_err: Exception | None = None
+        for opt in unit_options:
+            try:
+                return await client.read_holding_registers(
+                    address, **{count_name: count}, **opt
+                )
+            except TypeError as err:
+                last_err = err
+        raise UpdateFailed(f"read_holding_registers incompatible: {last_err}")
 
     regs: list[int] = []
     for offset in range(count):
-        response = await client.read_holding_registers(address + offset, **base_kwargs)
+        response: Any = None
+        for opt in unit_options:
+            try:
+                response = await client.read_holding_registers(address + offset, **opt)
+                break
+            except TypeError:
+                continue
         if (
             response is None
             or getattr(response, "isError", lambda: True)()
@@ -130,7 +149,9 @@ class KSEMCoordinator(DataUpdateCoordinator[KSEMReading]):
 
     async def close(self) -> None:
         try:
-            self._client.close()
+            result = self._client.close()
+            if hasattr(result, "__await__"):
+                await result
         except Exception:  # noqa: BLE001 - best effort on shutdown
             pass
 
