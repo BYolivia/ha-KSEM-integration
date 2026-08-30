@@ -31,16 +31,17 @@ class SensorDesc:
 
 
 _SENSORS: tuple[SensorDesc, ...] = (
-    SensorDesc("grid_power", "Potencia de red", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="grid_power"),
-    SensorDesc("pv_power", "Potencia placas", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="pv_power"),
-    SensorDesc("home_consumption", "Consumo de la casa", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="home_power"),
-    SensorDesc("battery_power", "Potencia bateria", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="battery_power"),
-    SensorDesc("grid_import_energy", "Energia red importada", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "direct", attr="grid_import_energy"),
-    SensorDesc("grid_export_energy", "Energia vertida a red", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "direct", attr="grid_export_energy"),
-    SensorDesc("pv_energy", "Energia placas", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="pv"),
-    SensorDesc("home_energy", "Energia consumo casa", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="home"),
-    SensorDesc("battery_in_energy", "Energia bateria entrada", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="bat_in"),
-    SensorDesc("battery_out_energy", "Energia bateria salida", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="bat_out"),
+    SensorDesc("grid_import_power", "Consumo de red", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="grid_import_power"),
+    SensorDesc("grid_export_power", "Inyeccion a la red", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="grid_export_power"),
+    SensorDesc("pv_power", "Produccion solar", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="pv_power"),
+    SensorDesc("home_consumption", "Consumo del hogar", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="home_power"),
+    SensorDesc("battery_power", "Potencia de la bateria", "W", SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT, "power", attr="battery_power"),
+    SensorDesc("grid_import_energy", "Energia consumida de la red", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "direct", attr="grid_import_energy"),
+    SensorDesc("grid_export_energy", "Energia inyectada a la red", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "direct", attr="grid_export_energy"),
+    SensorDesc("pv_energy", "Energia solar producida", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="pv"),
+    SensorDesc("home_energy", "Energia consumida del hogar", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="home"),
+    SensorDesc("battery_in_energy", "Energia de la bateria (carga)", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="bat_in"),
+    SensorDesc("battery_out_energy", "Energia de la bateria (descarga)", "kWh", SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING, "accum", acc_key="bat_out"),
 )
 
 

@@ -116,6 +116,8 @@ class KSEMReading:
     def __init__(
         self,
         grid_power: float,
+        grid_import_power: float,
+        grid_export_power: float,
         pv_power: float,
         home_power: float,
         battery_power: float,
@@ -123,6 +125,8 @@ class KSEMReading:
         grid_export_energy: float,
     ) -> None:
         self.grid_power: float = grid_power
+        self.grid_import_power: float = grid_import_power
+        self.grid_export_power: float = grid_export_power
         self.pv_power: float = pv_power
         self.home_power: float = home_power
         self.battery_power: float = battery_power
@@ -210,6 +214,8 @@ class KSEMCoordinator(DataUpdateCoordinator[KSEMReading]):
             raise UpdateFailed(f"Lectura KSEM: {err}") from err
 
         grid_power = float(self._decode_int32(grid_regs))
+        grid_import_power = max(0.0, grid_power)
+        grid_export_power = max(0.0, -grid_power)
         pv_power = float(self._decode_int32(pv_regs))
         home_power = float(self._decode_int32(home_regs))
         battery_power = float(self._decode_int32(battery_regs))
@@ -230,6 +236,8 @@ class KSEMCoordinator(DataUpdateCoordinator[KSEMReading]):
 
         return KSEMReading(
             grid_power=grid_power,
+            grid_import_power=grid_import_power,
+            grid_export_power=grid_export_power,
             pv_power=pv_power,
             home_power=home_power,
             battery_power=battery_power,
