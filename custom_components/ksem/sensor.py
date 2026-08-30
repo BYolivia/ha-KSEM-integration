@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.restore_state import RestoreSensor
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -79,7 +79,7 @@ class KSEMSensor(CoordinatorEntity[KSEMCoordinator], SensorEntity):
         return round(float(value), 3)
 
 
-class KSEMEnergySensor(CoordinatorEntity[KSEMCoordinator], RestoreSensor):
+class KSEMEnergySensor(CoordinatorEntity[KSEMCoordinator], SensorEntity, RestoreEntity):
     """Energy sensor integrated from power; restores last value across restarts."""
 
     def __init__(self, coordinator: KSEMCoordinator, desc: SensorDesc) -> None:
