@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 from datetime import datetime, timedelta
 from typing import Any
@@ -21,12 +22,30 @@ _LOGGER = logging.getLogger(__name__)
 _ACC_KEYS: tuple[str, ...] = ("pv", "home", "bat_in", "bat_out")
 
 
-async def read_registers(client: Any, address: int, count: int, slave: int) -> Any:
-    """Read holding registers, compatible with both pymodbus kwarg names."""
+def _resolve_unit_kwarg(client: Any, slave: int) -> dict[str, int]:
+    """Find how this pymodbus version expects the unit/slave id."""
     try:
-        return await client.read_holding_registers(address, count, slave=slave)
-    except TypeError:
-        return await client.read_holding_registers(address, count, unit=slave)
+        params = inspect.signature(client.read_holding_registers).parameters
+    except (ValueError, TypeError):
+        return {"unit": slave}
+    if "slave" in params:
+        return {"slave": slave}
+    if "unit" in params:
+        return {"unit": slave}
+    for attr in ("unit_id", "slave_id"):
+        if hasattr(client, attr):
+            try:
+                setattr(client, attr, slave)
+            except Exception:  # noqa: BLE001 - not all clients allow it
+                pass
+            break
+    return {}
+
+
+async def read_registers(client: Any, address: int, count: int, slave: int) -> Any:
+    """Read holding registers, tolerant to pymodbus kwarg/version differences."""
+    kwargs = _resolve_unit_kwarg(client, slave)
+    return await client.read_holding_registers(address, count, **kwargs)
 
 
 def create_tcp_client(host: str, port: int, timeout: int) -> Any:
