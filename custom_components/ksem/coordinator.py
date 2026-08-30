@@ -163,6 +163,16 @@ class KSEMCoordinator(DataUpdateCoordinator[KSEMReading]):
         return self._base.get(key, 0.0) + self._session.get(key, 0.0)
 
     async def _read(self, address: int, count: int) -> list[int]:
+        try:
+            return await self._do_read(address, count)
+        except Exception:
+            try:
+                await self._client.connect()
+            except Exception:  # noqa: BLE001 - best effort reconnect
+                pass
+            return await self._do_read(address, count)
+
+    async def _do_read(self, address: int, count: int) -> list[int]:
         if not self._client.connected:
             await self._client.connect()
         response = await read_registers(self._client, address, count, self._slave)

@@ -43,6 +43,8 @@ class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
         errors: dict[str, str] = {}
         if user_input is not None:
             self._connection_error = ""
+            await self.async_set_unique_id(user_input[CONF_HOST])
+            self._abort_if_unique_id_configured()
             if not await self._test_connection(user_input):
                 errors["base"] = self._connection_error or "cannot_connect"
             else:
@@ -52,6 +54,15 @@ class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
         return self.async_show_form(
             step_id="user", data_schema=_SCHEMA, errors=errors
         )
+
+    @staticmethod
+    def _close_client(client: Any) -> None:
+        try:
+            result = client.close()
+            if hasattr(result, "__await__"):
+                asyncio.ensure_future(result)
+        except Exception:  # noqa: BLE001 - best effort cleanup
+            pass
 
     async def _tcp_reachable(self, host: str, port: int) -> bool:
         try:
@@ -89,7 +100,7 @@ class KSEMConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                 _LOGGER.warning("KSEM: %s", self._connection_error)
                 return False
             response = await read_registers(client, 0, 2, slave)
-            client.close()
+            self._close_client(client)
             if response is None or response.isError():
                 self._connection_error = (
                     f"El KSEM respondio con error de Modbus (slave {slave}). "
