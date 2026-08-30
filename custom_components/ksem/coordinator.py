@@ -46,7 +46,7 @@ def _unit_options(client: Any, unit_name: str | None, slave: int) -> list[dict[s
     if unit_name == "unit":
         return [{"unit": slave}]
     opts: list[dict[str, int]] = [{"slave": slave}, {"unit": slave}]
-    for attr in ("unit_id", "slave_id"):
+    for attr in ("unit", "unit_id", "slave_id"):
         if hasattr(client, attr):
             try:
                 setattr(client, attr, slave)
