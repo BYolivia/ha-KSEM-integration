@@ -22,33 +22,64 @@ _LOGGER = logging.getLogger(__name__)
 _ACC_KEYS: tuple[str, ...] = ("pv", "home", "bat_in", "bat_out")
 
 
-def _resolve_unit_kwarg(client: Any, slave: int) -> dict[str, int]:
-    """Find how this pymodbus version expects the unit/slave id."""
+def _read_call_info(client: Any) -> tuple[str | None, str | None]:
+    """Detect the pymodbus signature: name of the count param and the unit param."""
     try:
-        params = inspect.signature(client.read_holding_registers).parameters
+        params = list(inspect.signature(client.read_holding_registers).parameters)
     except (ValueError, TypeError):
-        return {"unit": slave}
-    if "slave" in params:
-        return {"slave": slave}
-    if "unit" in params:
-        return {"unit": slave}
-    for attr in ("unit_id", "slave_id"):
-        if hasattr(client, attr):
-            try:
-                setattr(client, attr, slave)
-            except Exception:  # noqa: BLE001 - not all clients allow it
-                pass
-            break
-    return {}
+        return None, None
+    count_name = next((c for c in ("count", "length", "quantity") if c in params), None)
+    unit_name = next((c for c in ("slave", "unit") if c in params), None)
+    _LOGGER.debug(
+        "KSEM: firma read_holding_registers params=%s count=%s unit=%s",
+        params,
+        count_name,
+        unit_name,
+    )
+    return count_name, unit_name
 
 
 async def read_registers(client: Any, address: int, count: int, slave: int) -> Any:
     """Read holding registers, tolerant to pymodbus kwarg/version differences."""
-    kwargs = _resolve_unit_kwarg(client, slave)
-    try:
-        return await client.read_holding_registers(address, count=count, **kwargs)
-    except TypeError:
-        return await client.read_holding_registers(address, count, **kwargs)
+    count_name, unit_name = _read_call_info(client)
+
+    if unit_name is not None:
+        base_kwargs: dict[str, int] = {unit_name: slave}
+    else:
+        for attr in ("unit_id", "slave_id"):
+            if hasattr(client, attr):
+                try:
+                    setattr(client, attr, slave)
+                except Exception:  # noqa: BLE001 - not all clients allow it
+                    pass
+                break
+        base_kwargs = {}
+
+    if count_name is not None:
+        return await client.read_holding_registers(
+            address, **{count_name: count}, **base_kwargs
+        )
+
+    regs: list[int] = []
+    for offset in range(count):
+        response = await client.read_holding_registers(address + offset, **base_kwargs)
+        if (
+            response is None
+            or getattr(response, "isError", lambda: True)()
+            or not hasattr(response, "registers")
+            or len(response.registers) == 0
+        ):
+            raise UpdateFailed(f"Error Modbus al leer el registro {address + offset}")
+        regs.append(int(response.registers[0]))
+
+    class _Registers:
+        def __init__(self, registers: list[int]) -> None:
+            self.registers = registers
+
+        def isError(self) -> bool:
+            return False
+
+    return _Registers(regs)
 
 
 def create_tcp_client(host: str, port: int, timeout: int) -> Any:
