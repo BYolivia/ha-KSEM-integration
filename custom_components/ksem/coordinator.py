@@ -45,7 +45,10 @@ def _resolve_unit_kwarg(client: Any, slave: int) -> dict[str, int]:
 async def read_registers(client: Any, address: int, count: int, slave: int) -> Any:
     """Read holding registers, tolerant to pymodbus kwarg/version differences."""
     kwargs = _resolve_unit_kwarg(client, slave)
-    return await client.read_holding_registers(address, count, **kwargs)
+    try:
+        return await client.read_holding_registers(address, count=count, **kwargs)
+    except TypeError:
+        return await client.read_holding_registers(address, count, **kwargs)
 
 
 def create_tcp_client(host: str, port: int, timeout: int) -> Any:
